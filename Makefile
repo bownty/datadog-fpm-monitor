@@ -18,7 +18,6 @@ deploy-build: deploy-docker-build deploy-docker-push
 deploy-docker-build:
 	docker build . \
 		--pull \
-		--network=host \
 		-f _infrastructure/docker/Dockerfile
 
 .PHONY: deploy-docker-push
