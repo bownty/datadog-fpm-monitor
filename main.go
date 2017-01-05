@@ -259,6 +259,11 @@ func monitorServices(client *consul.Client, nodeName string, listenPort string, 
 				break
 			}
 
+			text := string(d)
+			text = "---\n" + text
+
+			d = []byte(text)
+
 			newHash := hashBytes(d)
 			if newHash == currentHash {
 				logger.Info("File hash is the same, NOOP")
