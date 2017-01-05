@@ -237,9 +237,9 @@ func monitorServices(client *consul.Client, nodeName string, listenPort string, 
 				projectName := strings.TrimRight(service.Service, "-php-fpm")
 
 				check := &PhpFpmCheck{}
-				check.PingURL = fmt.Sprintf("http://127.0.0.1:%s/php-fpm/%s/%s/%d/ping", listenPort, projectName, service.Address, service.Port)
+				check.PingURL = fmt.Sprintf("http://%s:%s/php-fpm/%s/%s/%d/ping", service.Address, listenPort, projectName, service.Address, service.Port)
 				check.PingReply = "pong"
-				check.StatusUURL = fmt.Sprintf("http://127.0.0.1:%s/php-fpm/%s/%s/%d/status", listenPort, projectName, service.Address, service.Port)
+				check.StatusUURL = fmt.Sprintf("http://%s:%s/php-fpm/%s/%s/%d/status", service.Address, listenPort, projectName, service.Address, service.Port)
 				check.Tags = []string{
 					fmt.Sprintf("project:%s", projectName),
 					fmt.Sprintf("host:%s", nodeName),
