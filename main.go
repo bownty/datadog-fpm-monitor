@@ -31,7 +31,7 @@ var logger = logrus.New()
 
 // PhpFpmServices ...
 type PhpFpmServices struct {
-	InitConfig []string       `yaml:"init_config"`
+	InitConfig []string       `yaml:"init_config,flow"`
 	Instances  []*PhpFpmCheck `yaml:"instances"`
 }
 
@@ -39,11 +39,18 @@ type PhpFpmServices struct {
 type PhpFpmCheck struct {
 	StatusUURL string   `yaml:"status_url"`
 	PingURL    string   `yaml:"ping_url"`
-	Tags       []string `yaml:"tags,flow"`
+	PingReply  string   `yaml:"ping_reply"`
+	Tags       []string `yaml:"tags"`
 }
 
 func main() {
 	logger.Info("Starting PHP-FPM datadog monitoring ")
+
+	// Assume we use nomad and we are exposed as HTTP port
+	listenPort := os.Getenv("NOMAD_PORT_http")
+	if listenPort == "" {
+		listenPort = "4000"
+	}
 
 	// Create consul client
 	config := consul.DefaultConfig()
@@ -68,7 +75,7 @@ func main() {
 	quitCh := make(chan string, 1)
 
 	// start monitoring of consul services
-	go monitorServices(client, nodeName, quitCh)
+	go monitorServices(client, nodeName, listenPort, quitCh)
 
 	// start the http reserver that proxies http requests to php-cgi
 	router := mux.NewRouter()
@@ -81,7 +88,7 @@ func main() {
 	server := &graceful.Server{
 		Timeout:          5 * time.Second,
 		TCPKeepAlive:     5 * time.Second,
-		Server:           &http.Server{Addr: ":4000", Handler: router},
+		Server:           &http.Server{Addr: ":" + listenPort, Handler: router},
 		Logger:           log.New(w, "HTTP: ", 0),
 		NoSignalHandling: true,
 	}
@@ -184,7 +191,7 @@ func showStatus(w http.ResponseWriter, r *http.Request) {
 
 // continuously monitor the local agent services for php-fpm services
 // and register them to the local datadog client
-func monitorServices(client *consul.Client, nodeName string, quitCh chan string) {
+func monitorServices(client *consul.Client, nodeName string, listenPort string, quitCh chan string) {
 	filePath := os.Getenv("TARGET_FILE")
 	if filePath == "" {
 		filePath = "/etc/dd-agent/conf.d/php_fpm.yaml"
@@ -230,9 +237,13 @@ func monitorServices(client *consul.Client, nodeName string, quitCh chan string)
 				projectName := strings.TrimRight(service.Service, "-php-fpm")
 
 				check := &PhpFpmCheck{}
-				check.PingURL = fmt.Sprintf("http://127.0.0.1:4000/php-fpm/%s/%s/%d/ping", projectName, service.Address, service.Port)
-				check.StatusUURL = fmt.Sprintf("http://127.0.0.1:4000/php-fpm/%s/%s/%d/status", projectName, service.Address, service.Port)
-				check.Tags = []string{projectName}
+				check.PingURL = fmt.Sprintf("http://127.0.0.1:%s/php-fpm/%s/%s/%d/ping", listenPort, projectName, service.Address, service.Port)
+				check.PingReply = "pong"
+				check.StatusUURL = fmt.Sprintf("http://127.0.0.1:%s/php-fpm/%s/%s/%d/status", listenPort, projectName, service.Address, service.Port)
+				check.Tags = []string{
+					fmt.Sprintf("project:%s", projectName),
+					fmt.Sprintf("host:%s", nodeName),
+				}
 
 				t.Instances = append(t.Instances, check)
 
