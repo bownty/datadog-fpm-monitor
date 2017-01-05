@@ -146,6 +146,7 @@ func showStatus(w http.ResponseWriter, r *http.Request) {
 	env["SCRIPT_FILENAME"] = fmt.Sprintf("/%s/internal/%s", project, endpoint)
 	env["SCRIPT_NAME"] = fmt.Sprintf("/%s/internal/%s", project, endpoint)
 	env["SERVER_SOFTWARE"] = "go / fcgiclient "
+	env["QUERY_STRING"] = "json=1"
 
 	// create fastcgi client
 	fcgi, err := fcgiclient.New(ip, realPort)
@@ -157,7 +158,7 @@ func showStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// do the fastcgi request
-	response, err := fcgi.Request(env, "")
+	response, err := fcgi.Request(env, "json=1")
 	if err != nil {
 		message := fmt.Sprintf("Failed fastcgi request: %s", err)
 		logger.Errorf(message)
