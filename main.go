@@ -19,10 +19,10 @@ import (
 
 	"io/ioutil"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
 	consul "github.com/hashicorp/consul/api"
 	"github.com/scukonick/go-fastcgi-client"
+	"github.com/sirupsen/logrus"
 	graceful "gopkg.in/tylerb/graceful.v1"
 	yaml "gopkg.in/yaml.v2"
 )
