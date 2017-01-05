@@ -29,7 +29,7 @@ deploy-docker-push: deploy-docker-build
 		-X POST \
 		-H "Authorization: ${GOOGLE_CLOUD_AUTH_KEY}" \
 		"https://www.googleapis.com/upload/storage/v1/b/bownty-deploy-artifacts/o?uploadType=media&name=${APP_NAME}/${APP_ENV}/${APP_VERSION}/datadog-fpm-monitor" \
-		-d @datadog-fpm-monitor
+		--data-binary @datadog-fpm-monitor
 	rm datadog-fpm-monitor
 
 .PHONY: deploy-build-internal
