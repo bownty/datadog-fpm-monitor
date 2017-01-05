@@ -20,7 +20,7 @@ deploy-docker-build:
 		--rm \
 		-v ${PWD}:/go/src/github.com/bownty/datadog-fpm-monitor \
 		--net=host \
-		golang:1.7 \
+		golang:1.7-wheezy \
 		bash -c "cd /go/src/github.com/bownty/datadog-fpm-monitor ; make deploy-build-internal"
 
 .PHONY: deploy-docker-push
