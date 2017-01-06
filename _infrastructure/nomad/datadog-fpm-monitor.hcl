@@ -22,6 +22,8 @@ job "{{PROJECT_NAME}}" {
 
         service {
             name = "{{PROJECT_NAME}}-go-expvar"
+            port = "http"
+
             check {
                 type     = "tcp"
                 port     = "http"
