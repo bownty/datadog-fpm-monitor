@@ -51,7 +51,7 @@ func httpShowPhpFpmFastCgiStatus(w http.ResponseWriter, r *http.Request) {
 	// convert the string port to int
 	realPort, err := strconv.Atoi(port)
 	if err != nil {
-		message := fmt.Sprintf("Invalid port %s: %s", port, err)
+		message := fmt.Sprintf("[php-fpm] Invalid port %s: %s", port, err)
 		logger.Errorf(message)
 		http.Error(w, message, 500)
 		return
@@ -68,7 +68,7 @@ func httpShowPhpFpmFastCgiStatus(w http.ResponseWriter, r *http.Request) {
 	// create fastcgi client
 	fcgi, err := fcgiclient.New(ip, realPort)
 	if err != nil {
-		message := fmt.Sprintf("Could not create fastcgi client: %s", err)
+		message := fmt.Sprintf("[php-fpm] Could not create fastcgi client: %s", err)
 		logger.Errorf(message)
 		http.Error(w, message, 500)
 		return
@@ -77,7 +77,7 @@ func httpShowPhpFpmFastCgiStatus(w http.ResponseWriter, r *http.Request) {
 	// do the fastcgi request
 	response, err := fcgi.Request(env, "json=1")
 	if err != nil {
-		message := fmt.Sprintf("Failed fastcgi request: %s", err)
+		message := fmt.Sprintf("[php-fpm] Failed fastcgi request: %s", err)
 		logger.Errorf(message)
 		http.Error(w, message, 500)
 		return
@@ -86,7 +86,7 @@ func httpShowPhpFpmFastCgiStatus(w http.ResponseWriter, r *http.Request) {
 	// parse the fastcgi response
 	body, err := response.ParseStdouts()
 	if err != nil {
-		message := fmt.Sprintf("Failed to parse fastcgi response: %s", err)
+		message := fmt.Sprintf("[php-fpm] Failed to parse fastcgi response: %s", err)
 		logger.Errorf(message)
 		http.Error(w, message, 500)
 		return
@@ -95,7 +95,7 @@ func httpShowPhpFpmFastCgiStatus(w http.ResponseWriter, r *http.Request) {
 	// read the response into a []bytes
 	resp, err := ioutil.ReadAll(body.Body)
 	if err != nil {
-		message := fmt.Sprintf("Failed to read fastcgi response: %s", err)
+		message := fmt.Sprintf("[php-fpm] Failed to read fastcgi response: %s", err)
 		logger.Errorf(message)
 		http.Error(w, message, 500)
 		return
@@ -104,7 +104,7 @@ func httpShowPhpFpmFastCgiStatus(w http.ResponseWriter, r *http.Request) {
 	// write to client
 	w.Write(resp)
 
-	logger.Infof("Request complete. Sent %d bytes", len(resp))
+	logger.Debugf("[php-fpm] Request complete. Sent %d bytes", len(resp))
 }
 
 // continuously monitor the local agent services for php-fpm services
