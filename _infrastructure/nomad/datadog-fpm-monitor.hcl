@@ -21,8 +21,9 @@ job "{{PROJECT_NAME}}" {
         }
 
         service {
-            name = "{{PROJECT_NAME}}-go-expvar"
+            name = "dd-go-expvar"
             port = "http"
+            tags = ["project:{{PROJECT_NAME}}"]
 
             check {
                 type     = "tcp"
