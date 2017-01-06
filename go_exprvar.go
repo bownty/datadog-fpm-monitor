@@ -39,17 +39,17 @@ func monitorGoExprvarServices(nodeName string, quitCh chan string) {
 
 	currentHash, err := hashFileMd5(filePath)
 	if err != nil {
-		logger.Warnf("Could not get initial hash for %s: %s", filePath, err)
+		logger.Warnf("[go-expvar] Could not get initial hash for %s: %s", filePath, err)
 		currentHash = ""
 	}
 
-	logger.Infof("Existing file hash %s: %s", filePath, currentHash)
+	logger.Infof("[go-expvar] Existing file hash %s: %s", filePath, currentHash)
 
 	file, err := os.Create(filePath)
 	if err != nil {
-		logger.Fatalf("Could not create file %s: %s", filePath, err)
-		return
+		logger.Fatalf("[go-expvar] Could not create file %s: %s", filePath, err)
 	}
+
 	defer file.Close()
 
 	stream := consulServices.Observe()
@@ -57,7 +57,7 @@ func monitorGoExprvarServices(nodeName string, quitCh chan string) {
 	for {
 		select {
 		case <-quitCh:
-			logger.Warn("Stopping monitorGoExprvarServices")
+			logger.Warn("[go-expvar] stopping")
 			return
 
 		case <-stream.Changes():
@@ -69,9 +69,10 @@ func monitorGoExprvarServices(nodeName string, quitCh chan string) {
 
 			for _, service := range services {
 				if !strings.HasSuffix(service.Service, "-go-expvar") {
-					logger.Debugf("Service %s does not match '-go-expvar' suffix", service.Service)
+					logger.Debugf("[go-expvar] Service %s does not match '-go-expvar' suffix", service.Service)
 					continue
 				}
+				logger.Infof("[go-expvar] Service %s does match '-php-fpm' suffix", service.Service)
 
 				// projectName := strings.TrimRight(service.Service, "-go-expvar")
 
@@ -79,8 +80,6 @@ func monitorGoExprvarServices(nodeName string, quitCh chan string) {
 				if check.ExpvarURL != "" {
 					t.Instances = append(t.Instances, check)
 				}
-
-				logger.Infof("Service %s does match '-php-fpm' suffix", service.Service)
 			}
 
 			// Sort the services by name so we get consistent output across runs
@@ -91,8 +90,7 @@ func monitorGoExprvarServices(nodeName string, quitCh chan string) {
 
 			d, err := yaml.Marshal(&t)
 			if err != nil {
-				logger.Fatalf("error: %v", err)
-				break
+				logger.Fatalf("[go-expvar] could not marshal yaml: %v", err)
 			}
 
 			text := string(d)
@@ -102,21 +100,21 @@ func monitorGoExprvarServices(nodeName string, quitCh chan string) {
 
 			newHash := hashBytes(d)
 			if newHash == currentHash {
-				logger.Info("File hash is the same, NOOP")
+				logger.Info("[go-expvar] File hash is the same, NOOP")
 				continue
 			}
 
 			if err := file.Truncate(0); err != nil {
-				logger.Errorf("Could not truncate file %s: %s", filePath, err)
+				logger.Errorf("[go-expvar] Could not truncate file %s: %s", filePath, err)
 				continue
 			}
 
 			if _, err := file.Write(d); err != nil {
-				logger.Errorf("Could not write file %s: %s", filePath, err)
+				logger.Errorf("[go-expvar] Could not write file %s: %s", filePath, err)
 				continue
 			}
 
-			logger.Infof("Successfully updated file: %s (old: %s | new: %s)", filePath, currentHash, newHash)
+			logger.Infof("[go-expvar] Successfully updated file: %s (old: %s | new: %s)", filePath, currentHash, newHash)
 			currentHash = newHash
 
 			reloadDataDogService()
@@ -133,20 +131,20 @@ func getRemoteConfig(url string) (config *GoExprConfigItem) {
 
 	response, err := http.Get(url)
 	if err != nil {
-		logger.Errorf("Could not GET url '%s': %s", url, err.Error())
+		logger.Errorf("[go-expvar] Could not GET url '%s': %s", url, err.Error())
 		return config
 	}
 
 	defer response.Body.Close()
 	content, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		logger.Errorf("Could not read response '%s': %s", url, err.Error())
+		logger.Errorf("[go-expvar] Could not read response '%s': %s", url, err.Error())
 		return config
 	}
 
 	err = yaml.Unmarshal(content, &config)
 	if err != nil {
-		logger.Errorf("Could not marshal response into YAML '%s', %s", url, err.Error())
+		logger.Errorf("[go-expvar] Could not marshal response into YAML '%s', %s", url, err.Error())
 		return config
 	}
 

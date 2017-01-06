@@ -38,7 +38,7 @@ type PhpFpmConfigItem struct {
 }
 
 // Connect to the upstream php-fpm process and get its current status
-func showPhpFpmStatus(w http.ResponseWriter, r *http.Request) {
+func httpShowPhpFpmFastCgiStatus(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	// variables we require to have present in the URL
@@ -117,15 +117,15 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 
 	currentHash, err := hashFileMd5(filePath)
 	if err != nil {
-		logger.Warnf("Could not get initial hash for %s: %s", filePath, err)
+		logger.Warnf("[php-fpm] Could not get initial hash for %s: %s", filePath, err)
 		currentHash = ""
 	}
 
-	logger.Infof("Existing file hash %s: %s", filePath, currentHash)
+	logger.Infof("[php-fpm] Existing file hash %s: %s", filePath, currentHash)
 
 	file, err := os.Create(filePath)
 	if err != nil {
-		logger.Fatalf("Could not create file %s: %s", filePath, err)
+		logger.Fatalf("[php-fpm] Could not create file %s: %s", filePath, err)
 		return
 	}
 	defer file.Close()
@@ -135,7 +135,7 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 	for {
 		select {
 		case <-quitCh:
-			logger.Warn("Stopping monitorPhpFpmServices")
+			logger.Warn("[php-fpm] Stopping")
 			return
 
 		case <-stream.Changes():
@@ -147,7 +147,7 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 
 			for _, service := range services {
 				if !strings.HasSuffix(service.Service, "-php-fpm") {
-					logger.Debugf("Service %s does not match '-php-fpm' suffix", service.Service)
+					logger.Debugf("[php-fpm] Service %s does not match '-php-fpm' suffix", service.Service)
 					continue
 				}
 
@@ -159,12 +159,11 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 				check.StatusUURL = fmt.Sprintf("http://%s:%s/php-fpm/%s/%s/%d/status", service.Address, listenPort, projectName, service.Address, service.Port)
 				check.Tags = []string{
 					fmt.Sprintf("project:%s", projectName),
-					fmt.Sprintf("host:%s", nodeName),
 				}
 
 				t.Instances = append(t.Instances, check)
 
-				logger.Infof("Service %s does match '-php-fpm' suffix", service.Service)
+				logger.Infof("[php-fpm] Service %s does match '-php-fpm' suffix", service.Service)
 			}
 
 			// Sort the services by name so we get consistent output across runs
@@ -175,7 +174,7 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 
 			d, err := yaml.Marshal(&t)
 			if err != nil {
-				logger.Fatalf("error: %v", err)
+				logger.Fatalf("[php-fpm] Could not marshal yaml: %v", err)
 				break
 			}
 
@@ -186,21 +185,21 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 
 			newHash := hashBytes(d)
 			if newHash == currentHash {
-				logger.Info("File hash is the same, NOOP")
+				logger.Info("[php-fpm] File hash is the same, NOOP")
 				continue
 			}
 
 			if err := file.Truncate(0); err != nil {
-				logger.Errorf("Could not truncate file %s: %s", filePath, err)
+				logger.Errorf("[php-fpm] Could not truncate file %s: %s", filePath, err)
 				continue
 			}
 
 			if _, err := file.Write(d); err != nil {
-				logger.Errorf("Could not write file %s: %s", filePath, err)
+				logger.Errorf("[php-fpm]Could not write file %s: %s", filePath, err)
 				continue
 			}
 
-			logger.Infof("Successfully updated file: %s (old: %s | new: %s)", filePath, currentHash, newHash)
+			logger.Infof("[php-fpm] Successfully updated file: %s (old: %s | new: %s)", filePath, currentHash, newHash)
 			currentHash = newHash
 
 			reloadDataDogService()

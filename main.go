@@ -58,7 +58,7 @@ func main() {
 	router := mux.NewRouter()
 	router.Handle("/debug/vars", http.DefaultServeMux)
 	router.HandleFunc("/datadog/expvar", showExprVar)
-	router.HandleFunc("/php-fpm/{project}/{ip}/{port}/{type}", showPhpFpmStatus)
+	router.HandleFunc("/php-fpm/{project}/{ip}/{port}/{type}", httpShowPhpFpmFastCgiStatus)
 
 	logger.Infof("")
 	logger.Info("Entrypoints:")
