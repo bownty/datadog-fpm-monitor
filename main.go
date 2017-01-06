@@ -203,13 +203,6 @@ func getListenPort() string {
 func showExprVar(w http.ResponseWriter, r *http.Request) {
 	metrics := make([]map[string]string, 0)
 	metrics = append(metrics, map[string]string{
-		"path":  "memstats/PauseTotalNs",
-		"alias": "go_expvar.gc.pause_time_in_ns",
-	})
-	metrics = append(metrics, map[string]string{
-		"path": "memstats/Alloc",
-	})
-	metrics = append(metrics, map[string]string{
 		"path": "php_fpm_instances",
 	})
 	metrics = append(metrics, map[string]string{
@@ -221,7 +214,7 @@ func showExprVar(w http.ResponseWriter, r *http.Request) {
 		Tags      []string            `yaml:"tags"`
 		Metrics   []map[string]string `yaml:"metrics"`
 	}{
-		"http://127.0.0.1:" + listenPort + "/datadog/expvar",
+		"http://127.0.0.1:" + listenPort + "/debug/vars",
 		[]string{"project:datadog-monitor"},
 		metrics,
 	}
