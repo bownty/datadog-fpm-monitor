@@ -167,7 +167,7 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 			}
 
 			// Sort the services by name so we get consistent output across runs
-			sort.Sort(ServiceSorter(t.Instances))
+			sort.Sort(PhpFpmServiceSorter(t.Instances))
 
 			instanceCount := len(t.Instances)
 			exprInstances.Set(int64(instanceCount))
@@ -207,9 +207,9 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 	}
 }
 
-// ServiceSorter sorts planets by PingURL
-type ServiceSorter []*PhpFpmConfigItem
+// PhpFpmServiceSorter sorts planets by PingURL
+type PhpFpmServiceSorter []*PhpFpmConfigItem
 
-func (a ServiceSorter) Len() int           { return len(a) }
-func (a ServiceSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a ServiceSorter) Less(i, j int) bool { return a[i].PingURL < a[j].PingURL }
+func (a PhpFpmServiceSorter) Len() int           { return len(a) }
+func (a PhpFpmServiceSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a PhpFpmServiceSorter) Less(i, j int) bool { return a[i].PingURL < a[j].PingURL }

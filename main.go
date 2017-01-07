@@ -202,12 +202,8 @@ func getListenPort() string {
 
 func showExprVar(w http.ResponseWriter, r *http.Request) {
 	metrics := make([]map[string]string, 0)
-	metrics = append(metrics, map[string]string{
-		"path": "php_fpm_instances",
-	})
-	metrics = append(metrics, map[string]string{
-		"path": "datadog_reload",
-	})
+	metrics = append(metrics, map[string]string{"path": "php_fpm_instances"})
+	metrics = append(metrics, map[string]string{"path": "datadog_reload"})
 
 	config := struct {
 		ExpvarURL string              `yaml:"expvar_url"`
@@ -221,7 +217,7 @@ func showExprVar(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := yaml.Marshal(&config)
 	if err != nil {
-		message := fmt.Sprintf("Could not marshal YAML: %s", err)
+		message := fmt.Sprintf("[showExprVar] Could not marshal YAML: %s", err)
 		logger.Errorf(message)
 		http.Error(w, message, 500)
 		return

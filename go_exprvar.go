@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -32,7 +33,7 @@ type GoExprMetricConfig map[string]string
 var goExprConfigCache = cache.New(30*time.Minute, 30*time.Second)
 
 func monitorGoExprvarServices(nodeName string, quitCh chan string) {
-	filePath := os.Getenv("TARGET_FILE_GO_EXPR")
+	filePath := os.Getenv("GO_EXPR_TARGET_FILE")
 	if filePath == "" {
 		filePath = "/etc/dd-agent/conf.d/go_expvar.yaml"
 	}
@@ -74,8 +75,6 @@ func monitorGoExprvarServices(nodeName string, quitCh chan string) {
 				}
 				logger.Infof("[go-expvar] Service %s does match '-php-fpm' suffix", service.Service)
 
-				// projectName := strings.TrimRight(service.Service, "-go-expvar")
-
 				check := getRemoteConfig(fmt.Sprintf("http://%s:%d/datadog/expvar", service.Address, service.Port))
 				if check.ExpvarURL != "" {
 					t.Instances = append(t.Instances, check)
@@ -83,7 +82,7 @@ func monitorGoExprvarServices(nodeName string, quitCh chan string) {
 			}
 
 			// Sort the services by name so we get consistent output across runs
-			// sort.Sort(ServiceSorter(t.Instances))
+			sort.Sort(GoExprServiceSorter(t.Instances))
 
 			instanceCount := len(t.Instances)
 			exprInstances.Set(int64(instanceCount))
@@ -151,3 +150,10 @@ func getRemoteConfig(url string) (config *GoExprConfigItem) {
 	goExprConfigCache.Set(url, config, cache.DefaultExpiration)
 	return config
 }
+
+// GoExprServiceSorter sorts planets by ExpvarURL
+type GoExprServiceSorter []*GoExprConfigItem
+
+func (a GoExprServiceSorter) Len() int           { return len(a) }
+func (a GoExprServiceSorter) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a GoExprServiceSorter) Less(i, j int) bool { return a[i].ExpvarURL < a[j].ExpvarURL }
