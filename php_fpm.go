@@ -110,7 +110,7 @@ func httpShowPhpFpmFastCgiStatus(w http.ResponseWriter, r *http.Request) {
 // continuously monitor the local agent services for php-fpm services
 // and register them to the local datadog client
 func monitorPhpFpmServices(nodeName string, quitCh chan string) {
-	filePath := os.Getenv("TARGET_FILE")
+	filePath := os.Getenv("PHP_FPM_CONFIG_FILE")
 	if filePath == "" {
 		filePath = "/etc/dd-agent/conf.d/php_fpm.yaml"
 	}
