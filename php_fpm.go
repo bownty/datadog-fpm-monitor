@@ -172,9 +172,12 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 			}
 
 			text := string(data)
-			text = strings.Trim(text, " ")
 			text = "---\n" + text
 
+			// turn the text back to bytes for hashing
+			data = []byte(text)
+
+			// compare hash of the new content vs file on disk
 			newHash := hashBytes(data)
 			if newHash == currentHash {
 				logger.Info("[php-fpm] File hash is the same, NOOP")
@@ -189,7 +192,7 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 			}
 
 			// write file to disk
-			if _, err := file.Write([]byte(text)); err != nil {
+			if _, err := file.Write(data); err != nil {
 				logger.Errorf("[php-fpm] Could not write file %s: %s", filePath, err)
 				file.Close()
 				continue

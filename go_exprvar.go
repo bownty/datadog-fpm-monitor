@@ -46,13 +46,6 @@ func monitorGoExprvarServices(nodeName string, quitCh chan string) {
 
 	logger.Infof("[go-expvar] Existing file hash %s: %s", filePath, currentHash)
 
-	file, err := os.Create(filePath)
-	if err != nil {
-		logger.Fatalf("[go-expvar] Could not create file %s: %s", filePath, err)
-	}
-
-	defer file.Close()
-
 	stream := consulServices.Observe()
 
 	for {
@@ -87,31 +80,38 @@ func monitorGoExprvarServices(nodeName string, quitCh chan string) {
 			instanceCount := len(t.Instances)
 			exprInstances.Set(int64(instanceCount))
 
-			d, err := yaml.Marshal(&t)
+			data, err := yaml.Marshal(&t)
 			if err != nil {
 				logger.Fatalf("[go-expvar] could not marshal yaml: %v", err)
 			}
 
-			text := string(d)
+			text := string(data)
 			text = "---\n" + text
 
-			d = []byte(text)
+			// turn the text back to bytes for hashing
+			data = []byte(text)
 
-			newHash := hashBytes(d)
+			// compare hash of the new content vs file on disk
+			newHash := hashBytes(data)
 			if newHash == currentHash {
 				logger.Info("[go-expvar] File hash is the same, NOOP")
 				continue
 			}
 
-			if err := file.Truncate(0); err != nil {
-				logger.Errorf("[go-expvar] Could not truncate file %s: %s", filePath, err)
+			// open file for write (truncated)
+			file, err := os.Create(filePath)
+			if err != nil {
+				logger.Fatalf("[go-expvar] Could not create file %s: %s", filePath, err)
 				continue
 			}
 
-			if _, err := file.Write(d); err != nil {
+			// write file to disk
+			if _, err := file.Write(data); err != nil {
 				logger.Errorf("[go-expvar] Could not write file %s: %s", filePath, err)
+				file.Close()
 				continue
 			}
+			file.Close()
 
 			logger.Infof("[go-expvar] Successfully updated file: %s (old: %s | new: %s)", filePath, currentHash, newHash)
 			currentHash = newHash
