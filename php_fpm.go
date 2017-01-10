@@ -123,13 +123,6 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 
 	logger.Infof("[php-fpm] Existing file hash %s: %s", filePath, currentHash)
 
-	file, err := os.Create(filePath)
-	if err != nil {
-		logger.Fatalf("[php-fpm] Could not create file %s: %s", filePath, err)
-		return
-	}
-	defer file.Close()
-
 	stream := consulServices.Observe()
 
 	for {
@@ -172,38 +165,36 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 			instanceCount := len(t.Instances)
 			exprInstances.Set(int64(instanceCount))
 
-			d, err := yaml.Marshal(&t)
+			data, err := yaml.Marshal(&t)
 			if err != nil {
 				logger.Fatalf("[php-fpm] Could not marshal yaml: %v", err)
 				break
 			}
 
-			text := string(d)
+			text := string(data)
 			text = strings.Trim(text, " ")
 			text = "---\n" + text
 
-			d = []byte(text)
-
-			newHash := hashBytes(d)
+			newHash := hashBytes(data)
 			if newHash == currentHash {
 				logger.Info("[php-fpm] File hash is the same, NOOP")
 				continue
 			}
 
-			if err := file.Truncate(0); err != nil {
-				logger.Errorf("[php-fpm] Could not truncate file %s: %s", filePath, err)
+			// open file for write (truncated)
+			file, err := os.Create(filePath)
+			if err != nil {
+				logger.Fatalf("[php-fpm] Could not create file %s: %s", filePath, err)
 				continue
 			}
 
-			if _, err := file.Write(d); err != nil {
+			// write file to disk
+			if _, err := file.Write([]byte(text)); err != nil {
 				logger.Errorf("[php-fpm] Could not write file %s: %s", filePath, err)
+				file.Close()
 				continue
 			}
-
-			if err := file.Sync(); err != nil {
-				logger.Errorf("[php-fpm] Could not sync file %s: %s", filePath, err)
-				continue
-			}
+			file.Close()
 
 			logger.Infof("[php-fpm] Successfully updated file: %s (old: %s | new: %s)", filePath, currentHash, newHash)
 			currentHash = newHash
