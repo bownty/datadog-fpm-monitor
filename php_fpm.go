@@ -179,6 +179,7 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 			}
 
 			text := string(d)
+			text = strings.Trim(text, " ")
 			text = "---\n" + text
 
 			d = []byte(text)
