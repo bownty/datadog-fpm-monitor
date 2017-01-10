@@ -196,7 +196,12 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 			}
 
 			if _, err := file.Write(d); err != nil {
-				logger.Errorf("[php-fpm]Could not write file %s: %s", filePath, err)
+				logger.Errorf("[php-fpm] Could not write file %s: %s", filePath, err)
+				continue
+			}
+
+			if err := file.Sync(); err != nil {
+				logger.Errorf("[php-fpm] Could not sync file %s: %s", filePath, err)
 				continue
 			}
 
