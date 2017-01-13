@@ -33,7 +33,7 @@ type GoExprMetricConfig map[string]string
 var goExprConfigCache = cache.New(30*time.Minute, 30*time.Second)
 
 func monitorGoExprvarServices(nodeName string, quitCh chan string) {
-	filePath := os.Getenv("GO_EXPR_TARGET_FILE")
+	filePath := os.Getenv("GO_EXPR_CONFIG_FILE")
 	if filePath == "" {
 		filePath = "/etc/dd-agent/conf.d/go_expvar.yaml"
 	}
