@@ -68,7 +68,14 @@ func monitorGoExprvarServices(nodeName string, quitCh chan string) {
 				}
 				logger.Infof("[go-expvar] Service %s does match '-php-fpm' suffix", service.Service)
 
-				check := getRemoteConfig(fmt.Sprintf("http://%s:%d/datadog/expvar", service.Address, service.Port))
+				url := fmt.Sprintf("http://%s:%d/datadog/expvar", service.Address, service.Port)
+
+				check, err := getRemoteConfig(url)
+				if err != nil {
+					logger.Warnf("[go-expvar] Could not get remote config for %s: %s", url, err)
+					continue
+				}
+
 				if check.ExpvarURL != "" {
 					t.Instances = append(t.Instances, check)
 				}
@@ -121,34 +128,31 @@ func monitorGoExprvarServices(nodeName string, quitCh chan string) {
 	}
 }
 
-func getRemoteConfig(url string) (config *GoExprConfigItem) {
+func getRemoteConfig(url string) (config *GoExprConfigItem, err error) {
 	cached, found := goExprConfigCache.Get(url)
 	if found {
 		config = cached.(*GoExprConfigItem)
-		return config
+		return config, nil
 	}
 
 	response, err := http.Get(url)
 	if err != nil {
-		logger.Errorf("[go-expvar] Could not GET url '%s': %s", url, err.Error())
-		return config
+		return nil, fmt.Errorf("Could not GET url '%s': %s", url, err.Error())
 	}
 
 	defer response.Body.Close()
 	content, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		logger.Errorf("[go-expvar] Could not read response '%s': %s", url, err.Error())
-		return config
+		return nil, fmt.Errorf("Could not read response '%s': %s", url, err.Error())
 	}
 
 	err = yaml.Unmarshal(content, &config)
 	if err != nil {
-		logger.Errorf("[go-expvar] Could not marshal response into YAML '%s', %s", url, err.Error())
-		return config
+		return nil, fmt.Errorf("Could not marshal response into YAML '%s', %s", url, err.Error())
 	}
 
 	goExprConfigCache.Set(url, config, cache.DefaultExpiration)
-	return config
+	return config, nil
 }
 
 // GoExprServiceSorter sorts planets by ExpvarURL
