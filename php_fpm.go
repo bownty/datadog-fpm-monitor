@@ -31,7 +31,7 @@ type PhpFpmConfig struct {
 
 // PhpFpmConfigItem ...
 type PhpFpmConfigItem struct {
-	StatusUURL string   `yaml:"status_url"`
+	StatusURL  string   `yaml:"status_url"`
 	PingURL    string   `yaml:"ping_url"`
 	PingReply  string   `yaml:"ping_reply"`
 	Tags       []string `yaml:"tags"`
@@ -149,7 +149,7 @@ func monitorPhpFpmServices(nodeName string, quitCh chan string) {
 				check := &PhpFpmConfigItem{}
 				check.PingURL = fmt.Sprintf("http://%s:%s/php-fpm/%s/%s/%d/ping", service.Address, listenPort, projectName, service.Address, service.Port)
 				check.PingReply = "pong"
-				check.StatusUURL = fmt.Sprintf("http://%s:%s/php-fpm/%s/%s/%d/status", service.Address, listenPort, projectName, service.Address, service.Port)
+				check.StatusURL = fmt.Sprintf("http://%s:%s/php-fpm/%s/%s/%d/status", service.Address, listenPort, projectName, service.Address, service.Port)
 				check.Tags = []string{
 					fmt.Sprintf("project:%s", projectName),
 				}
